@@ -14,7 +14,7 @@ app.get("/health", (req, res) => {
 
 app.post("/explain-day", async (req, res) => {
   try {
-    const userText = req.body.text;
+    const userText = req.body?.text;
 
     if (!userText) {
       return res.status(400).json({
@@ -32,17 +32,20 @@ app.post("/explain-day", async (req, res) => {
       },
       {
         headers: {
-          Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
+          "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
           "HTTP-Referer": "https://example.com",
-          "X-Title": "ExplainMyDay"
-        }
+          "X-Title": "ExplainMyDay",
+          "Content-Type": "application/json"
+        },
+        timeout: 20000 // 20 seconds
       }
     );
 
     const aiText =
-      response.data?.choices?.[0]?.message?.content;
+      response?.data?.choices?.[0]?.message?.content;
 
     if (!aiText) {
+      console.error("OpenRouter empty response:", response.data);
       return res.status(500).json({
         result: "AI returned no text"
       });
@@ -53,13 +56,17 @@ app.post("/explain-day", async (req, res) => {
     });
 
   } catch (error) {
-    console.error(error.response?.data || error.message);
+    console.error(
+      "OpenRouter error:",
+      error.response?.data || error.message
+    );
 
     res.status(500).json({
       result: "AI request failed on server"
     });
   }
 });
+
 
 
 const PORT = process.env.PORT || 3000;
